@@ -1,0 +1,25 @@
+version: "3.5"
+
+services:
+  springboot-reactive-playground:
+    image: docker.io/library/spingboot-reactive-playground
+    build:
+      context: .
+      dockerfile: Dockerfile
+    ports:
+      - "8080:8080"
+      - "5005:5005"
+    environment:
+      - REDIS_HOST=redis
+      - REDIS_PORT-6379
+      - JAVA_OPTS=-agentlib:jdwp=transport=dt_socket,server=y,suspend=n,address=*:5005
+    depends_on:
+      - redis
+
+
+  redis:
+    container_name: redis
+    image: redis:latest
+    ports:
+      - "6379:6379"
+

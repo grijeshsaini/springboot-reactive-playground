@@ -2,6 +2,7 @@ package com.grijesh.playground.service;
 
 import com.grijesh.playground.client.GithubClient;
 import com.grijesh.playground.dto.UserDetails;
+import com.grijesh.playground.repository.RedisDataRepository;
 import org.springframework.stereotype.Service;
 import reactor.core.publisher.Mono;
 
@@ -9,14 +10,26 @@ import reactor.core.publisher.Mono;
 public class UserService {
 
     private final GithubClient githubClient;
+    private final RedisDataRepository repository;
 
-    public UserService(GithubClient githubClient) {
+    public UserService(GithubClient githubClient, RedisDataRepository repository) {
         this.githubClient = githubClient;
+        this.repository = repository;
     }
 
     public Mono<UserDetails> getUser(String shortName) {
-        return githubClient.getUser(shortName)
-                .map((user) -> new UserDetails(user.login(), user.avatarUrl()));
+        return repository.find(shortName)
+                .map(avatar -> new UserDetails(shortName, avatar))
+                .switchIfEmpty(
+                        Mono.defer(() -> githubClient.getUser(shortName)
+                        .map((user) -> new UserDetails(user.login(), user.avatarUrl()))
+                        .flatMap(userDetails -> repository.save(userDetails.shortName(), userDetails.avatarUrl())
+                                .map(isSaved -> {
+                                    if (!isSaved) {
+                                        throw new RuntimeException("Value already exist");
+                                    }
+                                    return userDetails;
+                                }))));
     }
 
 }
