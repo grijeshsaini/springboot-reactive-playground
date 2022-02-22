@@ -19,17 +19,17 @@ public class UserService {
 
     public Mono<UserDetails> getUser(String shortName) {
         return repository.find(shortName)
-                .map(avatar -> new UserDetails(shortName, avatar))
                 .switchIfEmpty(
                         Mono.defer(() -> githubClient.getUser(shortName)
-                        .map((user) -> new UserDetails(user.login(), user.avatarUrl()))
-                        .flatMap(userDetails -> repository.save(userDetails.shortName(), userDetails.avatarUrl())
-                                .map(isSaved -> {
-                                    if (!isSaved) {
-                                        throw new RuntimeException("Value already exist");
-                                    }
-                                    return userDetails;
-                                }))));
+                                .map((user) -> new UserDetails(user.login(), user.avatarUrl()))
+                                .flatMap(userDetails -> repository.save(userDetails)
+                                        .map(isSaved -> {
+                                            if (!isSaved) {
+                                                throw new RuntimeException("Value already exist");
+                                            }
+                                            return userDetails;
+                                        })))
+                );
     }
 
 }
