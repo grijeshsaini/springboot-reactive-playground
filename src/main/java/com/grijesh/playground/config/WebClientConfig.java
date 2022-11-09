@@ -30,7 +30,7 @@ public class WebClientConfig {
                 });
 
         return WebClient.builder()
-                .clientConnector(new ReactorClientHttpConnector(HttpClient.from(tcpClient)))
+                .clientConnector(new ReactorClientHttpConnector(HttpClient.create(tcpClient.configuration().connectionProvider())))
                 .build();
     }
 }
